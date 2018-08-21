@@ -4,15 +4,24 @@ import pymongo
 
 from scrapy.spiders import CrawlSpider
 from scrapy.http import Request
-#from scrapy.selector import Selector
+from scrapy.selector import Selector
 from MyLabSpider.items import CommentItem
 
 global collection_name
 
+def combine_url(prefix,url):
+    return(prefix+url)
+    
 def extract_match(pattern,string):#return every matched element of input string
     if re.search(pattern,string):
         return(re.search(pattern,string).group(0))
         
+#cookie={
+#    '_T_WM':'836480f3c78ad70cac3ec62de233e2b5',
+#    'SCF':'AqmhC43QH0rxkNEoSLDKLDCA1W3i7ul_Ou7lmeepjtZdVZpkp1DDO_pplxkA6UrlOxTbkb6SHItyxc8sYxTBwtc.',
+#    'SUB':'_2A252W2QMDeRhGeBP61YU8C3OyT6IHXVVpAxErDV6PUJbktANLVnkkW1NRZcCslT3KPrS2cAoYsezLNMPUzTb70B2',
+#    'SUBP':'0033WrSXqPxfM725Ws9jqgMF55529P9D9WFgKdD2UJ-MHF38PqLFprfH5JpX5K-hUgL.FoqpehBfeheEeoz2dJLoIEXLxKnL122L1-BLxK-LBKeLB-zLxKML1hBL1KMLxKnL1h5L1h2LxK.LB.eLBK5t',
+#    'SUHB':'0wn1QHwt00cJH7'}
         
 class MySpider(CrawlSpider):
     name='comment'
@@ -20,14 +29,7 @@ class MySpider(CrawlSpider):
     custom_settings = {
     'ITEM_PIPELINES':{'MyLabSpider.pipelines.CommentMongoPipeline': 300},
     }
-    
-#    cookie={
-#    '_T_WM':'836480f3c78ad70cac3ec62de233e2b5',
-#    'SCF':'AqmhC43QH0rxkNEoSLDKLDCA1W3i7ul_Ou7lmeepjtZdVZpkp1DDO_pplxkA6UrlOxTbkb6SHItyxc8sYxTBwtc.',
-#    'SUB':'_2A252W2QMDeRhGeBP61YU8C3OyT6IHXVVpAxErDV6PUJbktANLVnkkW1NRZcCslT3KPrS2cAoYsezLNMPUzTb70B2',
-#    'SUBP':'0033WrSXqPxfM725Ws9jqgMF55529P9D9WFgKdD2UJ-MHF38PqLFprfH5JpX5K-hUgL.FoqpehBfeheEeoz2dJLoIEXLxKnL122L1-BLxK-LBKeLB-zLxKML1hBL1KMLxKnL1h5L1h2LxK.LB.eLBK5t',
-#    'SUHB':'0wn1QHwt00cJH7'}
-    
+     
     def start_requests(self):
         client = pymongo.MongoClient('localhost',27017)
         db_name = 'Sina'
@@ -63,6 +65,12 @@ class MySpider(CrawlSpider):
 #            'Connection':'keep-alive',
 #            'User-Agent':'Mozilla/5.0 (iPad; U; CPU OS 4_3_3 like Mac OS X; en-us) AppleWebKit/533.17.9 (KHTML, like Gecko) Version/5.0.2 Mobile/8J2 Safari/6533.18.5'}
 #        sina=Selector(response)
+        cookie={
+            '_T_WM':'836480f3c78ad70cac3ec62de233e2b5',
+            'SCF':'AqmhC43QH0rxkNEoSLDKLDCA1W3i7ul_Ou7lmeepjtZdVZpkp1DDO_pplxkA6UrlOxTbkb6SHItyxc8sYxTBwtc.',
+            'SUB':'_2A252W2QMDeRhGeBP61YU8C3OyT6IHXVVpAxErDV6PUJbktANLVnkkW1NRZcCslT3KPrS2cAoYsezLNMPUzTb70B2',
+            'SUBP':'0033WrSXqPxfM725Ws9jqgMF55529P9D9WFgKdD2UJ-MHF38PqLFprfH5JpX5K-hUgL.FoqpehBfeheEeoz2dJLoIEXLxKnL122L1-BLxK-LBKeLB-zLxKML1hBL1KMLxKnL1h5L1h2LxK.LB.eLBK5t',
+            'SUHB':'0wn1QHwt00cJH7'}
         item=CommentItem()
         author=[]
         reply=[]
@@ -70,6 +78,8 @@ class MySpider(CrawlSpider):
         like=[]
         source=[]
         tmp=[]#append parsed 'like' data
+        sina=Selector(response)
+        url_prefix='https://weibo.cn'
         collection_name=response.meta['collection_name']
         for data in response.xpath('//div[contains(@id,"C_")]'):
             author.append(data.xpath('./a/text()').extract_first())
@@ -90,4 +100,12 @@ class MySpider(CrawlSpider):
             item['source']=source[i]
             item['collection_name']=collection_name
             yield item
-        
+        next_url=sina.xpath('//div[@id="pagelist"]/form/div/a/@href').extract_first()
+        if next_url is not '':
+            print('next_url is detected:'+next_url)
+            if re.search('http.+',next_url):
+                pass
+            else:
+                next_url=combine_url(url_prefix,next_url)   
+                print('next_url is fixed:'+next_url)
+            yield Request(url=next_url, callback=self.parse, cookies=cookie, meta={'collection_name':collection_name})
