@@ -101,11 +101,14 @@ class MySpider(CrawlSpider):
             item['collection_name']=collection_name
             yield item
         next_url=sina.xpath('//div[@id="pagelist"]/form/div/a/@href').extract_first()
-        if next_url is not '':
-            print('next_url is detected:'+next_url)
-            if re.search('http.+',next_url):
-                pass
-            else:
-                next_url=combine_url(url_prefix,next_url)   
-                print('next_url is fixed:'+next_url)
-            yield Request(url=next_url, callback=self.parse, cookies=cookie, meta={'collection_name':collection_name})
+        try:
+            if next_url is not '':
+                print('next_url is detected:'+next_url)
+                if re.search('http.+',next_url):
+                    pass
+                else:
+                    next_url=combine_url(url_prefix,next_url)   
+                    print('next_url is fixed:'+next_url)
+                yield Request(url=next_url, callback=self.parse, cookies=cookie, meta={'collection_name':collection_name})
+        except TypeError:
+            print('No next_url')
