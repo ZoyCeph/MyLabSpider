@@ -12,23 +12,6 @@ from scrapy.conf import settings
 
 
 class CommentMongoPipeline(object):
-#    collection_name = 'Gsl6RoxfN'
-#    global collection_name
-#    global url
-#    client = pymongo.MongoClient('localhost',27017)
-#    db_name = 'Sina'
-#    db = client[db_name]
-#    collection_set01 = db['UrlsQueue']
-#    datas=list(collection_set01.find({},{'_id':0,'url':1,'status':1}))
-#    for data in datas:
-#        if data.get('status') == 'proccessing':
-#            url=data.get('url')
-#            pattern='(?<=/)([0-9a-zA-Z]{9})(?=\?)'
-#            if re.search(pattern,url):
-#                collection_name=re.search(pattern,url).group(0)
-#                break
-#    client.close()
-            
 
     def __init__(self, mongo_uri, mongo_db):
         self.mongo_uri = mongo_uri
@@ -56,7 +39,7 @@ class CommentMongoPipeline(object):
     
 
 class HomepageMongoPipeline(object):
-    collection_name = ''
+    collection_name = 'Homepage'
 
     def __init__(self, mongo_uri, mongo_db):
         self.mongo_uri = mongo_uri
